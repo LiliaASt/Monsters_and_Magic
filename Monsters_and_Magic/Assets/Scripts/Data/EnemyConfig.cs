@@ -9,6 +9,7 @@ public class EnemyConfig : ScriptableObject
     [Header("Характеристики")]
     public float maxHealth = 20f;
     public float moveSpeed = 1f;
+    public float damage = 5f;
 
     [Header("Награда")]
     public int xpReward = 2;
