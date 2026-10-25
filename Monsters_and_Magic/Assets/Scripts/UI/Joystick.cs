@@ -19,7 +19,7 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
         {
             canvasGroup.alpha = 0f;
             canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = false;
+            canvasGroup.blocksRaycasts = true;
         }
 
         if (handle != null)
