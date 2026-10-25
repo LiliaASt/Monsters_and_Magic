@@ -926,8 +926,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RunManager
   config: {fileID: 11400000, guid: c893a6c87cd89b5138867ee043a870d6, type: 2}
-  hero: {fileID: 519420030}
-  spawner: {fileID: 519420030}
+  hero: {fileID: 1067126529}
+  spawner: {fileID: 789544520}
   deathScreen: {fileID: 0}
   winScreen: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
