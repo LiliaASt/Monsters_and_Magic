@@ -5,13 +5,13 @@ using UnityEngine.UI;
 public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [Header("Настройки джойстика")]
+    public RectTransform visual;
     public RectTransform handle;
     public float handleRadius = 45f;
     public CanvasGroup canvasGroup;
+    [SerializeField] private Vector2Channel move;
 
     private Vector2 inputVector;
-
-    public Vector2 Direction { get => inputVector; }
 
     private void Awake()
     {
@@ -19,7 +19,7 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
         {
             canvasGroup.alpha = 0f;
             canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
+            canvasGroup.blocksRaycasts = false;
         }
 
         if (handle != null)
@@ -30,21 +30,23 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        this.transform.position = eventData.position;
+        if (visual != null)
+            visual.position = eventData.position;
 
         if (canvasGroup != null)
-        {
             canvasGroup.alpha = 0.6f;
-        }
 
         OnDrag(eventData);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (visual == null)
+            return;
+
         Vector2 position = Vector2.zero;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            (RectTransform)this.transform,
+            visual,
             eventData.position,
             eventData.pressEventCamera,
             out position);
@@ -55,6 +57,7 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
             handle.anchoredPosition = position;
 
         inputVector = position / handleRadius;
+        move?.Publish(inputVector);
     }
 
     public void OnPointerUp(PointerEventData eventData)
@@ -63,17 +66,17 @@ public class Joystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
             handle.anchoredPosition = Vector2.zero;
 
         inputVector = Vector2.zero;
+        move?.Publish(Vector2.zero);
 
         if (canvasGroup != null)
-        {
             canvasGroup.alpha = 0f;
-        }
     }
 
     private void OnDisable()
     {
         if (handle != null) handle.anchoredPosition = Vector2.zero;
         inputVector = Vector2.zero;
+        move?.Publish(Vector2.zero);
         if (canvasGroup != null) canvasGroup.alpha = 0f;
     }
 }
