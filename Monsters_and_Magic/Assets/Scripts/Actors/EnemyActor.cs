@@ -13,11 +13,12 @@ public class EnemyActor : MonoBehaviour, IAttackSource
     public bool IsDead => enemy.Health.IsDead;
     public Health Health => enemy.Health;
     public Transform Origin => transform;
-    public Health TargetHealth => Target?.Hero.Health;
+    public Transform TargetOrigin => Target == null ? null : Target.transform;
+    public Health TargetHealth => Target == null ? null : Target.Hero.Health;
     public AttackStats Stats => config.attack;
-    public float DistanceToTarget => TargetHealth == null
+    public float DistanceToTarget => TargetOrigin == null
         ? float.MaxValue
-        : Vector2.Distance(Origin.position, TargetHealth.transform.position);
+        : Vector2.Distance(Origin.position, TargetOrigin.position);
 
     public event Action<EnemyActor> Died;
 

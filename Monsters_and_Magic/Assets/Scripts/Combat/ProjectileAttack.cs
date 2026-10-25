@@ -35,7 +35,7 @@ public class ProjectileAttack : IAttack
             Quaternion.identity);
 
         projectile.Launch(
-            source.TargetHealth.transform.position,
+            source.TargetOrigin.position,
             source.Stats.damage,
             source.Stats.projectileSpeed);
     }

@@ -44,7 +44,7 @@ public class EnemySpawner : MonoBehaviour
 
     private void Spawn()
     {
-        Vector2 offset = Random.insideUnitCircle.normalized * spawnRadius;
+        Vector2 offset = UnityEngine.Random.insideUnitCircle.normalized * spawnRadius;
 
         EnemyActor enemy = Instantiate(
             enemyPrefab,

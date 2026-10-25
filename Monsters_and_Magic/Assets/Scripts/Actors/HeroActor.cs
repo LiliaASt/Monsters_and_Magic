@@ -13,16 +13,18 @@ public class HeroActor : MonoBehaviour, IAttackSource
     public Hero Hero { get; private set; }
     public bool IsDead => Hero.Health.IsDead;
     public Transform Origin => transform;
-    public Health TargetHealth { get; private set; }
+    public Transform TargetOrigin => target == null ? null : target.transform;
+    public Health TargetHealth => target == null ? null : target.Health;
     public AttackStats Stats => config.attack;
-    public float DistanceToTarget => TargetHealth == null
+    public float DistanceToTarget => TargetOrigin == null
         ? float.MaxValue
-        : Vector2.Distance(Origin.position, TargetHealth.transform.position);
+        : Vector2.Distance(Origin.position, TargetOrigin.position);
 
     private Rigidbody2D rb;
     private InputAction moveAction;
     private IAttack attack;
     private Vector2 touchDirection;
+    private EnemyActor target;
 
     private void Awake()
     {
@@ -57,7 +59,7 @@ public class HeroActor : MonoBehaviour, IAttackSource
         rb.linearVelocity = Hero.MoveVelocity;
         Turn();
 
-        TargetHealth = FindNearestEnemy()?.Health;
+        target = FindNearestEnemy();
         attack.Tick();
     }
 
