@@ -7,6 +7,7 @@ public class EnemyActor : MonoBehaviour, IAttackSource
 {
     [SerializeField] private EnemyConfig config;
     [SerializeField] private EnemySet enemies;
+    [SerializeField] private float separationRadius = 0.9f;
 
     public EnemyConfig Config => config;
     public HeroActor Target { get; set; }
@@ -45,10 +46,31 @@ public class EnemyActor : MonoBehaviour, IAttackSource
         }
 
         Vector2 direction = ((Vector2)Target.transform.position - rb.position).normalized;
-        rb.linearVelocity = direction * enemy.MoveSpeed;
+        rb.linearVelocity = direction * enemy.MoveSpeed + Separate();
         rb.MoveRotation(Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
 
         attack.Tick();
+    }
+
+    private Vector2 Separate()
+    {
+        Vector2 separation = Vector2.zero;
+
+        foreach (EnemyActor other in enemies.Items)
+        {
+            if (other == null || other == this)
+                continue;
+
+            Vector2 toOther = (Vector2)other.transform.position - rb.position;
+            float distance = toOther.magnitude;
+
+            if (distance >= separationRadius || distance <= 0f)
+                continue;
+
+            separation -= toOther / distance * (separationRadius - distance);
+        }
+
+        return separation;
     }
 
     private void HandleDied()

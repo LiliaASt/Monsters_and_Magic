@@ -170,3 +170,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyActor
   config: {fileID: 11400000, guid: d3b683d53e1cbd011920daa1e4478f50, type: 2}
+  enemies: {fileID: 11400000, guid: c250667b8da0815159161ae76aae4702, type: 2}
