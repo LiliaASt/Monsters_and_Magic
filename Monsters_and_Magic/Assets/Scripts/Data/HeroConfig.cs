@@ -10,4 +10,12 @@ public class HeroConfig : ScriptableObject
     public float maxHealth = 100f;
     public float regenPerSec = 0f;
     public float moveSpeed = 3f;
+
+    [Header("Атака")]
+    public AttackStats attack = new AttackStats
+    {
+        damage = 10f,
+        range = 2f,
+        cooldown = 1f
+    };
 }

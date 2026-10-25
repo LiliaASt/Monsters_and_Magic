@@ -9,19 +9,29 @@ public enum RunState
 
 public class Run
 {
-    private readonly int quota;
+    private readonly StageGoal goal;
 
     public RunState State { get; private set; }
     public int Kills { get; private set; }
-    public bool QuotaReached => Kills >= quota;
+    public float Elapsed { get; private set; }
+    public bool GoalReached => goal.Reached(Elapsed, Kills);
+    public bool RequiresClearing => goal.RequiresClearing;
 
     public event Action Won;
     public event Action Lost;
 
-    public Run(int quota)
+    public Run(StageGoal goal)
     {
-        this.quota = quota;
+        this.goal = goal;
         State = RunState.Active;
+    }
+
+    public void Tick(float deltaTime)
+    {
+        if (State != RunState.Active)
+            return;
+
+        Elapsed += deltaTime;
     }
 
     public void Kill()

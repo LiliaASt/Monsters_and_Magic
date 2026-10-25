@@ -9,7 +9,14 @@ public class EnemyConfig : ScriptableObject
     [Header("Характеристики")]
     public float maxHealth = 20f;
     public float moveSpeed = 1f;
-    public float damage = 5f;
+
+    [Header("Атака")]
+    public AttackStats attack = new AttackStats
+    {
+        damage = 5f,
+        range = 0.6f,
+        cooldown = 1f
+    };
 
     [Header("Награда")]
     public int xpReward = 2;

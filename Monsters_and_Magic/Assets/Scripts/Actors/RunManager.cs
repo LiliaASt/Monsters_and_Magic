@@ -13,9 +13,33 @@ public class RunManager : MonoBehaviour
 
     private void Awake()
     {
-        run = new Run(config.killQuota);
+        run = new Run(CreateGoal());
         spawner.Spawned += HandleSpawned;
         hero.Hero.Health.Died += HandleHeroDeath;
+    }
+
+    private void Update()
+    {
+        run.Tick(Time.deltaTime);
+
+        if (run.State != RunState.Active || !run.GoalReached)
+            return;
+
+        spawner.Stop();
+
+        if (!run.RequiresClearing || spawner.AliveCount == 0)
+            Finish(winScreen);
+    }
+
+    private StageGoal CreateGoal()
+    {
+        switch (config.goal)
+        {
+            case StageGoalType.SurviveTimer:
+                return new SurviveGoal(config.surviveSeconds);
+            default:
+                return new KillGoal(config.killQuota);
+        }
     }
 
     private void HandleSpawned(EnemyActor enemy)
@@ -26,12 +50,6 @@ public class RunManager : MonoBehaviour
     private void HandleEnemyDeath(EnemyActor enemy)
     {
         run.Kill();
-
-        if (run.QuotaReached)
-            spawner.Stop();
-
-        if (run.QuotaReached && spawner.AliveCount == 0)
-            Finish(winScreen);
     }
 
     private void HandleHeroDeath()
