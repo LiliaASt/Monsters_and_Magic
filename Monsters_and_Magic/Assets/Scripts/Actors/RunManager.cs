@@ -14,6 +14,8 @@ public class RunManager : MonoBehaviour
     private void Awake()
     {
         run = new Run(CreateGoal());
+        run.Won += HandleWon;
+        run.Lost += HandleLost;
         spawner.Spawned += HandleSpawned;
         hero.Hero.Health.Died += HandleHeroDeath;
     }
@@ -40,6 +42,16 @@ public class RunManager : MonoBehaviour
             default:
                 return new KillGoal(config.killQuota);
         }
+    }
+
+    private void HandleWon()
+    {
+        Debug.Log("Win");
+    }
+
+    private void HandleLost()
+    {
+        Debug.Log("Lose");
     }
 
     private void HandleSpawned(EnemyActor enemy)
