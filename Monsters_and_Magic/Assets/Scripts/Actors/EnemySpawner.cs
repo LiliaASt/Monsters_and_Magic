@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,11 +10,23 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private int maxAlive = 10;
     [SerializeField] private float spawnRadius = 8f;
 
+    public event Action<EnemyActor> Spawned;
+    public int AliveCount => alive.Count;
+
     private readonly List<EnemyActor> alive = new();
     private float timer;
+    private bool spawning = true;
+
+    public void Stop()
+    {
+        spawning = false;
+    }
 
     private void Update()
     {
+        if (!spawning)
+            return;
+
         timer -= Time.deltaTime;
 
         if (timer > 0f)
@@ -31,7 +44,7 @@ public class EnemySpawner : MonoBehaviour
 
     private void Spawn()
     {
-        Vector2 offset = Random.insideUnitCircle.normalized * spawnRadius;
+        Vector2 offset = UnityEngine.Random.insideUnitCircle.normalized * spawnRadius;
 
         EnemyActor enemy = Instantiate(
             enemyPrefab,
@@ -41,6 +54,7 @@ public class EnemySpawner : MonoBehaviour
         enemy.Target = hero;
         enemy.Died += HandleDied;
         alive.Add(enemy);
+        Spawned?.Invoke(enemy);
     }
 
     private void HandleDied(EnemyActor enemy)

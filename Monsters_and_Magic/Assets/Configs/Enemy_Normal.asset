@@ -15,6 +15,13 @@ MonoBehaviour:
   displayName: "\u041E\u0431\u044B\u0447\u043D\u044B\u0439"
   maxHealth: 20
   moveSpeed: 1
+  attack:
+    type: 0
+    damage: 5
+    range: 1.5
+    cooldown: 1
+    projectilePrefab: {fileID: 0}
+    projectileSpeed: 6
   xpReward: 2
   crystalReward: 1
   crystalDropChance: 0.3
