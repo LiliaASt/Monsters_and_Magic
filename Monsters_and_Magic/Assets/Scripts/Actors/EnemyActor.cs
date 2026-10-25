@@ -31,13 +31,7 @@ public class EnemyActor : MonoBehaviour
 
         Vector2 direction = ((Vector2)Target.transform.position - rb.position).normalized;
         rb.linearVelocity = direction * enemy.MoveSpeed;
-        Turn(direction);
-    }
-
-    private void Turn(Vector2 direction)
-    {
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        rb.MoveRotation(Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
     }
 
     private void HandleDied()

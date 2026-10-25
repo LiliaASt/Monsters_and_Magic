@@ -7,6 +7,7 @@ public class HeroActor : MonoBehaviour
 {
     [SerializeField] private HeroConfig config;
     [SerializeField] private Vector2Channel move;
+    [SerializeField] private float turnSpeed = 720f;
 
     public Hero Hero { get; private set; }
     public bool IsDead => Hero.Health.IsDead;
@@ -52,8 +53,8 @@ public class HeroActor : MonoBehaviour
         if (Hero.Direction.sqrMagnitude <= 0f)
             return;
 
-        float angle = Mathf.Atan2(Hero.Direction.y, Hero.Direction.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        float targetAngle = Mathf.Atan2(Hero.Direction.y, Hero.Direction.x) * Mathf.Rad2Deg;
+        rb.MoveRotation(Mathf.MoveTowardsAngle(rb.rotation, targetAngle, turnSpeed * Time.fixedDeltaTime));
     }
 
     private void HandleTouch(Vector2 direction)
