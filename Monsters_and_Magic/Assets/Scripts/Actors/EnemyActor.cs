@@ -34,6 +34,7 @@ public class EnemyActor : MonoBehaviour, IAttackSource
         attack = AttackFactory.Create(config.attack);
         attack.Initialize(this);
         enemy.Health.Died += HandleDied;
+        enemy.Health.Damaged += HandleDamaged;
         enemies.Add(this);
     }
 
@@ -71,6 +72,11 @@ public class EnemyActor : MonoBehaviour, IAttackSource
         }
 
         return separation;
+    }
+
+    private void HandleDamaged(float amount)
+    {
+        Debug.Log($"{config.displayName}: -{amount} HP ({enemy.Health.Current}/{enemy.Health.Max})");
     }
 
     private void HandleDied()

@@ -33,6 +33,9 @@ public class HeroActor : MonoBehaviour, IAttackSource
         moveAction = GetComponent<PlayerInput>().actions["Move"];
         attack = AttackFactory.Create(config.attack);
         attack.Initialize(this);
+
+        Hero.Health.Damaged += HandleHeroDamaged;
+        Hero.Health.Restored += HandleHeroRestored;
     }
 
     private void OnEnable()
@@ -91,6 +94,16 @@ public class HeroActor : MonoBehaviour, IAttackSource
         }
 
         return nearest;
+    }
+
+    private void HandleHeroDamaged(float amount)
+    {
+        Debug.Log($"Hero: -{amount} HP ({Hero.Health.Current}/{Hero.Health.Max})");
+    }
+
+    private void HandleHeroRestored(float amount)
+    {
+        Debug.Log($"Hero: +{amount} HP ({Hero.Health.Current}/{Hero.Health.Max})");
     }
 
     private void HandleTouch(Vector2 direction)
