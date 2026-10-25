@@ -6,6 +6,7 @@ public class Hero
 
     public Health Health { get; }
     public float MoveSpeed { get; private set; }
+    public Vector2 Direction => direction;
     public Vector2 MoveVelocity => direction * MoveSpeed;
 
     public Hero(HeroConfig config)

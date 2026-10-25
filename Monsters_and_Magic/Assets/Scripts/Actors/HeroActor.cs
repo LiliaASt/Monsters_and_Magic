@@ -44,6 +44,16 @@ public class HeroActor : MonoBehaviour
 
         Hero.SetDirection(direction);
         rb.linearVelocity = Hero.MoveVelocity;
+        Turn();
+    }
+
+    private void Turn()
+    {
+        if (Hero.Direction.sqrMagnitude <= 0f)
+            return;
+
+        float angle = Mathf.Atan2(Hero.Direction.y, Hero.Direction.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
     private void HandleTouch(Vector2 direction)
