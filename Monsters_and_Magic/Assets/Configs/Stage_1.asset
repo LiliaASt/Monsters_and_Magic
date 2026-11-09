@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b750c4690ba446d1bb5e511365e5d73, type: 3}
   m_Name: Stage_1
   m_EditorClassIdentifier: Assembly-CSharp::StageConfig
-  goal: 0
+  goal: 1
   killQuota: 20
   surviveSeconds: 60

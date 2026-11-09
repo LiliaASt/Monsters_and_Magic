@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 519420031}
   - component: {fileID: 519420029}
   - component: {fileID: 519420030}
+  - component: {fileID: 519420033}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -256,6 +257,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519420033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ed2cbbc4c66de7b1807378c916f86ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
+  target: {fileID: 1067126526}
+  smoothTime: 0.15
+  maxOffset: 2
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -534,6 +550,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HeroActor
   config: {fileID: 11400000, guid: 5eeedc2af99b4a37eac2e73e666e1454, type: 2}
   move: {fileID: 11400000, guid: d3a6c53161d485047b5eba9e44c52323, type: 2}
+  enemies: {fileID: 11400000, guid: c250667b8da0815159161ae76aae4702, type: 2}
+  turnSpeed: 720
 --- !u!50 &1067126530
 Rigidbody2D:
   serializedVersion: 5
@@ -906,6 +924,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8800000101}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
