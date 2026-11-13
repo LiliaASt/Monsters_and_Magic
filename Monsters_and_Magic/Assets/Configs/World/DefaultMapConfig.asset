@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a9f93d1e8a40e183a56d31246382ade, type: 3}
+  m_Name: DefaultMapConfig
+  m_EditorClassIdentifier: Assembly-CSharp::MapConfig
+  chunkSize: 4
+  loadRadius: 1
+  seed: 1337
+  groundNoiseScale: 0.09
+  groundTiles:
+  - {fileID: 11400000, guid: 6cb845d8b72cc2d319e2a81a4a1b2db6, type: 2}
+  decorations: []
+  obstaclesEnabled: 0
+  obstacles: []
+  obstacleFreeRadius: 4
+  obstacleClearCenter: {x: 0, y: 0}
+  worldProps:
+  - prefab: {fileID: 3571512863493311154, guid: e2f9fcded407563c4a43ce0f94406198, type: 3}
+    probability: 0.16
+  - prefab: {fileID: 6832132069702970942, guid: 7b5055343b4ab2f11b74d4c50448835f, type: 3}
+    probability: 0.16
+  - prefab: {fileID: 4236935210210064693, guid: 750d120b4406e2db5ab6cace89f39b38, type: 3}
+    probability: 0.16
+  - prefab: {fileID: 573622564397464903, guid: 4a448deac60be267bac3a56c8b14d5bf, type: 3}
+    probability: 0.16
+  - prefab: {fileID: 7327406806743060262, guid: c8c5cd7d01803358c9eb316688e7942d, type: 3}
+    probability: 0.16
+  - prefab: {fileID: 1479841872084281548, guid: d1ef38433a8347ee397173b87f8c5064, type: 3}
+    probability: 0.16
+  propNoiseScale: 0.06
+  propNoiseThreshold: 0.45
+  propClearRadius: 6

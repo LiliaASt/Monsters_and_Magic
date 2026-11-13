@@ -1,27 +1,52 @@
-using UnityEngine;
+using System.Collections.Generic;
 
 public class Hero
 {
-    private Vector2 direction;
+    private readonly HeroConfig config;
+    private readonly HeroState state;
 
-    public Health Health { get; }
-    public float MoveSpeed { get; private set; }
-    public Vector2 Direction => direction;
-    public Vector2 MoveVelocity => direction * MoveSpeed;
+    public string Id => state.id;
+    public string DisplayName => config.displayName;
+    public int GlobalLevel => state.globalLevel;
+    public int CompletedLevels => state.completedLevels;
+    public int CurrentLevel => state.currentLevel;
 
-    public Hero(HeroConfig config)
+    public float MaxHealth => config.maxHealth;
+    public float RegenPerSec => config.regenPerSec;
+    public float MoveSpeed => config.moveSpeed;
+    public IReadOnlyList<AttackDefinition> StartingAttacks => config.startingAttacks;
+
+    public Hero(HeroConfig config, HeroState state)
     {
-        Health = new Health(config.maxHealth, config.regenPerSec);
-        MoveSpeed = config.moveSpeed;
+        this.config = config;
+        this.state = state;
     }
 
-    public void SetDirection(Vector2 value)
+    public void SetGlobalLevel(int level)
     {
-        direction = Vector2.ClampMagnitude(value, 1f);
+        state.globalLevel = level;
     }
 
-    public void Tick(float deltaTime)
+    public void SetProgress(int completedLevels, int currentLevel)
     {
-        Health.Tick(deltaTime);
+        state.completedLevels = completedLevels;
+        state.currentLevel = currentLevel;
+    }
+
+    public void CompleteLevel()
+    {
+        state.completedLevels++;
+        state.currentLevel = state.completedLevels + 1;
+        state.wins++;
+    }
+
+    public void RegisterDeath()
+    {
+        state.deaths++;
+    }
+
+    public void AddKills(int amount)
+    {
+        state.totalKills += amount;
     }
 }

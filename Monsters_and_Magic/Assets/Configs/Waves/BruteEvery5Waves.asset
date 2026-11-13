@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec94e40c3e3d49d891d44c391fb58ef2, type: 3}
+  m_Name: BruteEvery5Waves
+  m_EditorClassIdentifier: Assembly-CSharp::PeriodicWaveModifier
+  firstWave: 5
+  interval: 5
+  durationMultiplier: 1.15
+  spawnIntervalMultiplier: 1
+  enemyCountMultiplier: 1.15
+  maxAliveMultiplier: 1.1
+  groupChanceBonus: 0.1
+  forcedGroups:
+  - {fileID: 11400000, guid: 3b3d4233f51447dbbfee3a86347af3c8, type: 2}

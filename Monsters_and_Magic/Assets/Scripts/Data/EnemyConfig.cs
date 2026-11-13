@@ -1,25 +1,13 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Enemy_Normal", menuName = "Monsters and Magic/Enemy Config")]
+[CreateAssetMenu(fileName = "Enemy", menuName = "Monsters and Magic/Enemies/Enemy")]
 public class EnemyConfig : ScriptableObject
 {
-    [Header("Общее")]
-    public string displayName = "Обычный";
-
-    [Header("Характеристики")]
+    public string displayName = "Enemy";
+    public EnemyActor prefab;
     public float maxHealth = 20f;
     public float moveSpeed = 1f;
-
-    [Header("Атака")]
-    public AttackStats attack = new AttackStats
-    {
-        damage = 5f,
-        range = 0.6f,
-        cooldown = 1f
-    };
-
-    [Header("Награда")]
+    public AttackDefinition attack;
     public int xpReward = 2;
-    public int crystalReward = 1;
-    [Range(0f, 1f)] public float crystalDropChance = 0.3f;
+    public GameObject deathEffect;
 }

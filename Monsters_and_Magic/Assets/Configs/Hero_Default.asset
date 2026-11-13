@@ -12,7 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ebe8e6316875ee7a3abf2c69ee7b885f, type: 3}
   m_Name: Hero_Default
   m_EditorClassIdentifier: Assembly-CSharp::HeroConfig
+  id: hero_default
   displayName: "\u0413\u0435\u0440\u043E\u0439"
   maxHealth: 100
   regenPerSec: 0
   moveSpeed: 3
+  startingAttacks:
+  - {fileID: 11400000, guid: e249278e09ae45b1a4d91a353f5d97d9, type: 2}
+  - {fileID: 11400000, guid: f20d3c40af8d4a228f2caf6d77d5befe, type: 2}
+  - {fileID: 11400000, guid: 66e45559b0024b65aec7dc77cf71412a, type: 2}
+  - {fileID: 11400000, guid: 154ea80d08d8490dbafdb6eab270e21f, type: 2}

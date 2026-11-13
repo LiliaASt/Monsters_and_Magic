@@ -2,41 +2,46 @@ using UnityEngine;
 
 public class ProjectileAttack : IAttack
 {
+    private readonly ProjectileAttackDefinition definition;
     private IAttackSource source;
+    private AttackInstance attack;
     private float cooldownTimer;
 
-    public void Initialize(IAttackSource source)
+    public ProjectileAttack(ProjectileAttackDefinition definition)
+    {
+        this.definition = definition;
+    }
+
+    public void Initialize(IAttackSource source, AttackInstance attack)
     {
         this.source = source;
+        this.attack = attack;
     }
 
     public void Tick()
     {
         cooldownTimer -= Time.deltaTime;
+        AttackStats stats = attack.Stats;
 
-        if (cooldownTimer > 0f)
+        if (cooldownTimer > 0f || source.TargetHealth == null)
             return;
 
-        if (source.TargetHealth == null)
+        if (source.DistanceToTarget > stats.range)
             return;
 
-        if (source.DistanceToTarget > source.Stats.range)
-            return;
-
-        Fire();
-        cooldownTimer = source.Stats.cooldown;
-    }
-
-    private void Fire()
-    {
-        Projectile projectile = Object.Instantiate(
-            source.Stats.projectilePrefab,
+        Projectile instance = Object.Instantiate(
+            definition.prefab,
             source.Origin.position,
-            Quaternion.identity);
+            source.Origin.rotation);
 
-        projectile.Launch(
-            source.TargetOrigin.position,
-            source.Stats.damage,
-            source.Stats.projectileSpeed);
+        instance.Launch(
+            source.Origin,
+            source.TargetOrigin,
+            source.Team,
+            stats.damage,
+            stats.range,
+            definition);
+
+        cooldownTimer = stats.cooldown;
     }
 }
