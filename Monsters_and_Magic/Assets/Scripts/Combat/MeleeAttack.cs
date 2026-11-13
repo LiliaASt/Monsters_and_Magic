@@ -2,28 +2,38 @@ using UnityEngine;
 
 public class MeleeAttack : IAttack
 {
+    private readonly MeleeAttackDefinition definition;
     private IAttackSource source;
+    private AttackInstance attack;
     private float cooldownTimer;
 
-    public void Initialize(IAttackSource source)
+    public MeleeAttack(MeleeAttackDefinition definition)
+    {
+        this.definition = definition;
+    }
+
+    public void Initialize(IAttackSource source, AttackInstance attack)
     {
         this.source = source;
+        this.attack = attack;
     }
 
     public void Tick()
     {
         cooldownTimer -= Time.deltaTime;
+        AttackStats stats = attack.Stats;
 
-        if (cooldownTimer > 0f)
+        if (cooldownTimer > 0f || source.TargetHealth == null)
             return;
 
-        if (source.TargetHealth == null)
+        if (source.DistanceToTarget > stats.range)
             return;
 
-        if (source.DistanceToTarget > source.Stats.range)
-            return;
+        source.TargetHealth.TakeDamage(stats.damage);
 
-        source.TargetHealth.TakeDamage(source.Stats.damage);
-        cooldownTimer = source.Stats.cooldown;
+        if (definition != null && definition.hitEffect != null)
+            VfxEffect.Spawn(definition.hitEffect, source.TargetOrigin.position);
+
+        cooldownTimer = stats.cooldown;
     }
 }

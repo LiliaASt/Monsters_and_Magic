@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7430469732c65663a8ee7307c6dc52e2, type: 3}
+  m_Name: Stage_1Location
+  m_EditorClassIdentifier: Assembly-CSharp::LocationConfig
+  locationName: Stage_1
+  map: {fileID: 11400000, guid: 0c7a6d4de009c3d8cae00677e4234a2a, type: 2}
+  waves: {fileID: 11400000, guid: fadc2badd75140feae29c717c4c4c33d, type: 2}

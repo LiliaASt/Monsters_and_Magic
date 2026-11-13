@@ -1,41 +1,77 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(PlayerInput))]
 [RequireComponent(typeof(Rigidbody2D))]
-public class HeroActor : MonoBehaviour, IAttackSource
+public class HeroActor : MonoBehaviour, IAttackSource, IDamageable
 {
-    [SerializeField] private HeroConfig config;
+    public static HeroActor Instance { get; private set; }
+
     [SerializeField] private Vector2Channel move;
     [SerializeField] private EnemySet enemies;
-    [SerializeField] private float turnSpeed = 720f;
+    [SerializeField] private WorldHealthBarController healthBar;
 
     public Hero Hero { get; private set; }
-    public bool IsDead => Hero.Health.IsDead;
+    public Health Health { get; private set; }
+    public CombatTeam Team => CombatTeam.Player;
+    public bool IsDead => Health.IsDead;
     public Transform Origin => transform;
     public Transform TargetOrigin => target == null ? null : target.transform;
     public Health TargetHealth => target == null ? null : target.Health;
-    public AttackStats Stats => config.attack;
     public float DistanceToTarget => TargetOrigin == null
         ? float.MaxValue
         : Vector2.Distance(Origin.position, TargetOrigin.position);
 
+    private readonly List<IAttack> attacks = new();
     private Rigidbody2D rb;
     private InputAction moveAction;
-    private IAttack attack;
+    private Run run;
+    private Camera gameplayCamera;
     private Vector2 touchDirection;
+    private Vector2 direction;
     private EnemyActor target;
 
     private void Awake()
     {
-        Hero = new Hero(config);
+        Instance = this;
         rb = GetComponent<Rigidbody2D>();
-        moveAction = GetComponent<PlayerInput>().actions["Move"];
-        attack = AttackFactory.Create(config.attack);
-        attack.Initialize(this);
+        // The hero must physically collide with world props; enemy damage
+        // is distance-based, so a trigger collider is not needed here.
+        GetComponent<Collider2D>().isTrigger = false;
+        // Pushing against a static collider would spin the body otherwise.
+        rb.freezeRotation = true;
 
-        Hero.Health.Damaged += HandleHeroDamaged;
-        Hero.Health.Restored += HandleHeroRestored;
+        // Physics moves the body at FixedUpdate rate (50 Hz) while rendering
+        // runs faster; without interpolation the sprite stutters between
+        // physics steps.
+        rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        moveAction = GetComponent<PlayerInput>().actions["Move"];
+        gameplayCamera = Camera.main;
+    }
+
+    public void Initialize(Hero hero, Run run)
+    {
+        Hero = hero;
+        this.run = run;
+        Health = new Health(hero.MaxHealth, hero.RegenPerSec);
+
+        healthBar.Bind(Health, FindVisualSprite());
+
+        foreach (AttackInstance attack in run.Attacks)
+            AddAttack(attack);
+
+        run.AttackAdded += AddAttack;
+
+        Health.Damaged += HandleHeroDamaged;
+        Health.Restored += HandleHeroRestored;
+    }
+
+    private void AddAttack(AttackInstance instance)
+    {
+        IAttack attack = instance.Definition.Create();
+        attack.Initialize(this, instance);
+        attacks.Add(attack);
     }
 
     private void OnEnable()
@@ -48,37 +84,71 @@ public class HeroActor : MonoBehaviour, IAttackSource
         move.Unsubscribe(HandleTouch);
     }
 
+    private void OnDestroy()
+    {
+        if (run != null)
+            run.AttackAdded -= AddAttack;
+    }
+
     private void Update()
     {
-        Hero.Tick(Time.deltaTime);
+        Health.Tick(Time.deltaTime);
+    }
+
+    private SpriteRenderer FindVisualSprite()
+    {
+        // The billboard sprite lives in the Visual child since the 2.5D pass;
+        // fall back to any sprite for older prefabs.
+        Transform visual = transform.Find("Visual");
+        return visual != null
+            ? visual.GetComponent<SpriteRenderer>()
+            : GetComponentInChildren<SpriteRenderer>();
+    }
+
+    public event System.Action<int> XpCollected;
+
+
+    public void GainXP(int amount)
+    {
+        XpCollected?.Invoke(amount);
     }
 
     private void FixedUpdate()
     {
-        Vector2 keyboard = moveAction.ReadValue<Vector2>();
-        Vector2 direction = touchDirection.sqrMagnitude > 0f ? touchDirection : keyboard;
+        if (Health.IsDead)
+        {
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
 
-        Hero.SetDirection(direction);
-        rb.linearVelocity = Hero.MoveVelocity;
-        Turn();
+        Vector2 keyboard = moveAction.ReadValue<Vector2>();
+        Vector2 input = touchDirection.sqrMagnitude > 0f ? touchDirection : keyboard;
+
+        direction = Vector2.ClampMagnitude(input, 1f);
+        rb.linearVelocity = direction * Hero.MoveSpeed;
 
         target = FindNearestEnemy();
-        attack.Tick();
-    }
-
-    private void Turn()
-    {
-        if (Hero.Direction.sqrMagnitude <= 0f)
-            return;
-
-        float targetAngle = Mathf.Atan2(Hero.Direction.y, Hero.Direction.x) * Mathf.Rad2Deg;
-        rb.MoveRotation(Mathf.MoveTowardsAngle(rb.rotation, targetAngle, turnSpeed * Time.fixedDeltaTime));
+        foreach (IAttack attack in attacks)
+            attack.Tick();
     }
 
     private EnemyActor FindNearestEnemy()
     {
-        EnemyActor nearest = null;
-        float best = float.MaxValue;
+        // Pick randomly among the three closest enemies in range so
+        // simultaneous attacks spread across the crowd instead of every
+        // projectile chasing the same unlucky target.
+        List<EnemyActor> candidates = new List<EnemyActor>();
+        float targetRadius = 15f;
+
+        // Target anything visible on screen regardless of device: the
+        // radius comes from the camera frustum (aspect included), so wide
+        // and narrow screens behave the same.
+        if (gameplayCamera != null && gameplayCamera.orthographic)
+        {
+            float halfHeight = gameplayCamera.orthographicSize;
+            float halfWidth = halfHeight * gameplayCamera.aspect;
+            targetRadius = Mathf.Sqrt(halfWidth * halfWidth + halfHeight * halfHeight) + 2f;
+        }
 
         foreach (EnemyActor enemy in enemies.Items)
         {
@@ -86,28 +156,36 @@ public class HeroActor : MonoBehaviour, IAttackSource
                 continue;
 
             float distance = Vector2.Distance(transform.position, enemy.transform.position);
-            if (distance < best)
-            {
-                best = distance;
-                nearest = enemy;
-            }
+
+            if (distance > targetRadius)
+                continue;
+
+            candidates.Add(enemy);
         }
 
-        return nearest;
+        if (candidates.Count == 0)
+            return null;
+
+        candidates.Sort((a, b) =>
+            Vector2.Distance(transform.position, a.transform.position)
+                .CompareTo(Vector2.Distance(transform.position, b.transform.position)));
+
+        int take = Mathf.Min(candidates.Count, 3);
+        return candidates[Random.Range(0, take)];
     }
 
     private void HandleHeroDamaged(float amount)
     {
-        Debug.Log($"Hero: -{amount} HP ({Hero.Health.Current}/{Hero.Health.Max})");
+
     }
 
     private void HandleHeroRestored(float amount)
     {
-        Debug.Log($"Hero: +{amount} HP ({Hero.Health.Current}/{Hero.Health.Max})");
+
     }
 
-    private void HandleTouch(Vector2 direction)
+    private void HandleTouch(Vector2 value)
     {
-        touchDirection = direction;
+        touchDirection = value;
     }
 }

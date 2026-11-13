@@ -16,6 +16,7 @@ public class ChunkManager : MonoBehaviour
     [SerializeField] private Tilemap obstacles;
     [SerializeField] private Transform followTarget;
     [SerializeField, Min(1)] private int maxChunksPerFrame = 4;
+    [SerializeField] private Transform propContainer;
 
     public static ChunkManager Instance { get; private set; }
 
@@ -26,12 +27,17 @@ public class ChunkManager : MonoBehaviour
     private TileBase[] groundBuffer;
     private TileBase[] decorationBuffer;
     private TileBase[] obstacleBuffer;
+    private readonly Dictionary<Vector2Int, List<GameObject>> propChunks = new();
+    private readonly List<ChunkGenerator.PropSpawn> propSpawns = new();
     private Vector2Int currentChunk;
     private bool hasCurrentChunk;
+    private float cellSizeX = 1f;
+    private float cellSizeY = 1f;
 
     private void Awake()
     {
         Instance = this;
+
 
         if (config != null)
         {
@@ -39,6 +45,12 @@ public class ChunkManager : MonoBehaviour
             groundBuffer = new TileBase[count];
             decorationBuffer = new TileBase[count];
             obstacleBuffer = new TileBase[count];
+        }
+
+        if (ground != null && ground.layoutGrid != null)
+        {
+            cellSizeX = Mathf.Max(0.01f, ground.layoutGrid.cellSize.x);
+            cellSizeY = Mathf.Max(0.01f, ground.layoutGrid.cellSize.y);
         }
     }
 
@@ -67,10 +79,16 @@ public class ChunkManager : MonoBehaviour
 
     private Vector2Int WorldToChunk(Vector3 worldPosition)
     {
+        // World units -> grid cells -> chunk index. With a 6-unit cell a
+        // chunk of 4 cells spans 24 world units; dividing world position by
+        // chunkSize directly made the current chunk flip every few steps and
+        // left holes at the loaded-area border.
+        int cellX = Mathf.FloorToInt(worldPosition.x / cellSizeX);
+        int cellY = Mathf.FloorToInt(worldPosition.y / cellSizeY);
         int size = config.chunkSize;
         return new Vector2Int(
-            Mathf.FloorToInt(worldPosition.x / size),
-            Mathf.FloorToInt(worldPosition.y / size));
+            Mathf.FloorToInt((float)cellX / size),
+            Mathf.FloorToInt((float)cellY / size));
     }
 
     private void RefreshDesiredChunks()
@@ -128,6 +146,7 @@ public class ChunkManager : MonoBehaviour
             WriteChunk(ground, chunk, groundBuffer);
             WriteChunk(decorations, chunk, decorationBuffer);
             WriteChunk(obstacles, chunk, obstacleBuffer);
+            SpawnProps(chunk);
             loaded[chunk] = true;
         }
 
@@ -169,6 +188,70 @@ public class ChunkManager : MonoBehaviour
         WriteChunk(ground, chunk, groundBuffer);
         WriteChunk(decorations, chunk, decorationBuffer);
         WriteChunk(obstacles, chunk, obstacleBuffer);
+        DespawnProps(chunk);
+    }
+
+    private void SpawnProps(Vector2Int chunk)
+    {
+        if (config.worldProps == null || config.worldProps.Length == 0)
+            return;
+
+        ChunkGenerator.GeneratePropPositions(chunk, config, cellSizeX, propSpawns);
+
+        if (propSpawns.Count == 0)
+            return;
+
+        List<GameObject> props = new List<GameObject>(propSpawns.Count);
+
+        foreach (ChunkGenerator.PropSpawn spawn in propSpawns)
+        {
+            MapConfig.WorldPropEntry entry = config.worldProps[spawn.PropIndex];
+
+            if (entry.prefab == null)
+                continue;
+
+            GameObject prop = Instantiate(
+                entry.prefab,
+                new Vector3(spawn.Position.x, spawn.Position.y, 0f),
+                Quaternion.identity,
+                propContainer != null ? propContainer : transform);
+            prop.transform.localScale = new Vector3(
+                spawn.Scale * (spawn.FlipX ? -1f : 1f), spawn.Scale, 1f);
+
+            Billboard billboard = prop.GetComponent<Billboard>();
+
+            if (billboard != null)
+                billboard.SetTilt(spawn.Tilt);
+
+            props.Add(prop);
+        }
+
+        propChunks[chunk] = props;
+        float minScale = float.MaxValue;
+        float maxScale = float.MinValue;
+
+        foreach (ChunkGenerator.PropSpawn spawn in propSpawns)
+        {
+            minScale = Mathf.Min(minScale, spawn.Scale);
+            maxScale = Mathf.Max(maxScale, spawn.Scale);
+        }
+
+
+    }
+
+    private void DespawnProps(Vector2Int chunk)
+    {
+        if (!propChunks.TryGetValue(chunk, out List<GameObject> props))
+            return;
+
+        foreach (GameObject prop in props)
+        {
+            if (prop != null)
+                Destroy(prop);
+        }
+
+        props.Clear();
+        propChunks.Remove(chunk);
     }
 
     private int CompareByDistanceToCurrent(Vector2Int a, Vector2Int b)

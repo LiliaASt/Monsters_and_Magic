@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b750c4690ba446d1bb5e511365e5d73, type: 3}
   m_Name: Stage_1
   m_EditorClassIdentifier: Assembly-CSharp::StageConfig
-  goal: 1
+  goal: 2
   killQuota: 20
   surviveSeconds: 60
+  location: {fileID: 11400000, guid: e58ad6c8a2ec1770a8d888a9300ecbfb, type: 2}
+  waveRules: {fileID: 11400000, guid: fadc2badd75140feae29c717c4c4c33d, type: 2}
+  waveCount: 10

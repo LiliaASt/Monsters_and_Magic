@@ -68,4 +68,28 @@ public class MapConfig : ScriptableObject
     public float obstacleFreeRadius = 4f;
 
     public Vector2 obstacleClearCenter = Vector2.zero;
+
+    [Serializable]
+    public struct WorldPropEntry
+    {
+        public GameObject prefab;
+
+        [Range(0f, 1f)]
+        [Tooltip("Chance per cell once the cluster noise mask passes.")]
+        public float probability;
+    }
+
+    [Header("World props (paper 2.5D)")]
+    [Tooltip("Billboarded sprite props streamed per chunk: trees, mushrooms, rocks, grass.")]
+    public WorldPropEntry[] worldProps;
+
+    [Tooltip("Cluster mask noise scale - props grow in natural patches.")]
+    public float propNoiseScale = 0.06f;
+
+    [Range(0f, 1f)]
+    public float propNoiseThreshold = 0.45f;
+
+    [Tooltip("No props inside this radius around the clear center.")]
+    [Min(0f)]
+    public float propClearRadius = 6f;
 }

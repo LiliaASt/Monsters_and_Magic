@@ -1,10 +1,9 @@
 using UnityEngine;
 
-public interface IAttackSource
+public interface IAttackSource : IDamageable
 {
     Transform Origin { get; }
     Transform TargetOrigin { get; }
     Health TargetHealth { get; }
     float DistanceToTarget { get; }
-    AttackStats Stats { get; }
 }

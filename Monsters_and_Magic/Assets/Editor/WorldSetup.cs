@@ -25,8 +25,9 @@ public static class WorldSetup
     private const string ConfigPath = ConfigFolder + "/DefaultMapConfig.asset";
     private const string ScenePath = "Assets/Scenes/Game.unity";
 
-    private const int TileSize = 128;
-    private const int DecorationCount = 12;
+    // The whole ground image becomes ONE tile (no slicing), scaled to cover
+    // exactly TileWorldSize world units whatever its pixel size.
+    private const int TileWorldSize = 6;
 
     [MenuItem("Tools/Monsters and Magic/Setup World Tilemap")]
     public static void Setup()
@@ -56,31 +57,15 @@ public static class WorldSetup
 
         TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(TexturePath);
         importer.textureType = TextureImporterType.Sprite;
-        importer.spriteImportMode = SpriteImportMode.Multiple;
-        importer.spritePixelsPerUnit = TileSize;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        Texture2D source = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
+        int pixels = source != null ? source.height : 1024;
+        importer.spritePixelsPerUnit = (float)pixels / TileWorldSize;
         importer.mipmapEnabled = false;
         importer.filterMode = FilterMode.Bilinear;
         importer.isReadable = true;
-        importer.spritesheet = null;
 
         Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
-        int columns = texture.width / TileSize;
-        int rows = texture.height / TileSize;
-        List<SpriteMetaData> sheet = new List<SpriteMetaData>();
-
-        for (int y = 0; y < rows; y++)
-        {
-            for (int x = 0; x < columns; x++)
-                sheet.Add(new SpriteMetaData
-                {
-                    name = "tile_" + x + "_" + y,
-                    rect = new Rect(x * TileSize, y * TileSize, TileSize, TileSize),
-                    alignment = (int)SpriteAlignment.Center,
-                    pivot = new Vector2(0.5f, 0.5f)
-                });
-        }
-
-        importer.spritesheet = sheet.ToArray();
         importer.SaveAndReimport();
     }
 
@@ -89,27 +74,39 @@ public static class WorldSetup
         EnsureFolder(TileFolder);
         EnsureFolder(TileFolder + "/Tiles");
 
-        List<Tile> tiles = new List<Tile>();
-
-        foreach (Sprite sprite in AssetDatabase.LoadAllAssetsAtPath(TexturePath).OfType<Sprite>())
+        // Remove sliced leftovers from the previous setup so the folder
+        // holds exactly one whole-image tile.
+        foreach (string old in AssetDatabase.FindAssets("t:Tile", new[] { TileFolder + "/Tiles" }))
         {
-            string path = TileFolder + "/Tiles/" + sprite.name + ".asset";
-            Tile tile = AssetDatabase.LoadAssetAtPath<Tile>(path);
+            string path = AssetDatabase.GUIDToAssetPath(old);
 
-            if (tile == null)
-            {
-                tile = ScriptableObject.CreateInstance<Tile>();
-                AssetDatabase.CreateAsset(tile, path);
-            }
-
-            tile.sprite = sprite;
-            tile.colliderType = Tile.ColliderType.None;
-            EditorUtility.SetDirty(tile);
-            tiles.Add(tile);
+            if (path.EndsWith(".asset"))
+                AssetDatabase.DeleteAsset(path);
         }
 
+        List<Tile> tiles = new List<Tile>();
+
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(TexturePath);
+
+        if (sprite == null)
+            throw new InvalidOperationException("Meadow sprite not found after import.");
+
+        string tilePath = TileFolder + "/Tiles/" + sprite.name + ".asset";
+        Tile tile = AssetDatabase.LoadAssetAtPath<Tile>(tilePath);
+
+        if (tile == null)
+        {
+            tile = ScriptableObject.CreateInstance<Tile>();
+            AssetDatabase.CreateAsset(tile, tilePath);
+        }
+
+        tile.sprite = sprite;
+        tile.colliderType = Tile.ColliderType.None;
+        EditorUtility.SetDirty(tile);
+        tiles.Add(tile);
+
         if (tiles.Count == 0)
-            throw new InvalidOperationException("No meadow sprites found after import.");
+            throw new InvalidOperationException("Meadow tile was not created.");
 
         return tiles;
     }
@@ -126,37 +123,14 @@ public static class WorldSetup
             AssetDatabase.CreateAsset(config, ConfigPath);
         }
 
-        // Split tiles by pixel variance: busy, sparkly pieces become
-        // decoration patches, calm even pieces stay as ground.
-        List<Tile> decorations = new List<Tile>(tiles);
-        decorations.Sort((a, b) =>
-            MeasureVariance(b.sprite).CompareTo(MeasureVariance(a.sprite)));
-        decorations = decorations.GetRange(0, Mathf.Min(DecorationCount, decorations.Count));
-
-        List<Tile> ground = new List<Tile>(tiles);
-        foreach (Tile decoration in decorations)
-            ground.Remove(decoration);
-
+        // The whole image is one self-contained ground tile - no slicing,
+        // no separate decoration layer for now (flowers live in the image).
         config.seed = 1337;
-        config.chunkSize = 16;
-        config.loadRadius = 2;
+        config.chunkSize = 4;
+        config.loadRadius = 1;
         config.groundNoiseScale = 0.09f;
-        config.groundTiles = ground.ToArray();
-
-        List<MapConfig.DecorationEntry> entries = new List<MapConfig.DecorationEntry>();
-
-        foreach (Tile decoration in decorations)
-        {
-            entries.Add(new MapConfig.DecorationEntry
-            {
-                tile = decoration,
-                probability = 0.05f,
-                noiseScale = 0.05f,
-                noiseThreshold = 0.55f
-            });
-        }
-
-        config.decorations = entries.ToArray();
+        config.groundTiles = tiles.ToArray();
+        config.decorations = new MapConfig.DecorationEntry[0];
         config.obstaclesEnabled = false;
         config.obstacles = new MapConfig.ObstacleEntry[0];
         config.obstacleFreeRadius = 4f;
@@ -164,33 +138,6 @@ public static class WorldSetup
         return config;
     }
 
-    private static float MeasureVariance(Sprite sprite)
-    {
-        Texture2D texture = sprite.texture;
-        Rect rect = sprite.textureRect;
-        int step = 8;
-        float sum = 0f;
-        float sumSquares = 0f;
-        int count = 0;
-
-        for (int y = (int)rect.y; y < rect.y + rect.height; y += step)
-        {
-            for (int x = (int)rect.x; x < rect.x + rect.width; x += step)
-            {
-                Color color = texture.GetPixel(x, y);
-                float luma = color.r * 0.3f + color.g * 0.59f + color.b * 0.11f;
-                sum += luma;
-                sumSquares += luma * luma;
-                count++;
-            }
-        }
-
-        if (count == 0)
-            return 0f;
-
-        float mean = sum / count;
-        return sumSquares / count - mean * mean;
-    }
 
     private static void SetupScene(MapConfig config)
     {
@@ -211,7 +158,7 @@ public static class WorldSetup
         if (grid == null)
             grid = gridObject.AddComponent<Grid>();
 
-        grid.cellSize = Vector3.one;
+        grid.cellSize = new Vector3(TileWorldSize, TileWorldSize, 1f);
 
         Tilemap ground = GetOrCreateTilemap(gridObject.transform, "Ground", -10);
         Tilemap decorations = GetOrCreateTilemap(gridObject.transform, "Decorations", -9);

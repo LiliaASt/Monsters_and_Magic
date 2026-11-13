@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using System.Collections.Generic;
 
 /// <summary>
 /// Pure deterministic chunk content generator. The same seed + chunk
@@ -48,6 +49,81 @@ public static class ChunkGenerator
                 }
 
                 decorations[index] = PickDecoration(config, worldX, worldY);
+            }
+        }
+    }
+
+    public struct PropSpawn
+    {
+        public Vector2 Position;
+        public int PropIndex;
+        public bool FlipX;
+        public float Scale;
+        public float Tilt;
+    }
+
+    /// <summary>
+    /// Deterministic world-space prop spawns for a chunk (one prop per cell
+    /// at most). Same seed + coordinates always regrow the same grove.
+    /// </summary>
+    public static void GeneratePropPositions(Vector2Int chunkCoord, MapConfig config,
+        float cellSize, List<PropSpawn> output)
+    {
+        output.Clear();
+
+        if (config.worldProps == null || config.worldProps.Length == 0)
+            return;
+
+        int size = config.chunkSize;
+        int offsetX = chunkCoord.x * size;
+        int offsetY = chunkCoord.y * size;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                int cellX = offsetX + x;
+                int cellY = offsetY + y;
+
+                float mask = Mathf.PerlinNoise(
+                    cellX * config.propNoiseScale + Hash01(config.seed, 505) * 512f,
+                    cellY * config.propNoiseScale + Hash01(config.seed, 606) * 512f);
+
+                if (mask < config.propNoiseThreshold)
+                    continue;
+
+                for (int propIndex = 0; propIndex < config.worldProps.Length; propIndex++)
+                {
+                    MapConfig.WorldPropEntry entry = config.worldProps[propIndex];
+
+                    if (entry.prefab == null || entry.probability <= 0f)
+                        continue;
+
+                    if (Hash01(cellX, cellY, config.seed * 31 + 23 + propIndex * 7)
+                        >= entry.probability)
+                        continue;
+
+                    float jitterX = (Hash01(cellX, cellY, config.seed * 31 + 29) - 0.5f) * 0.5f;
+                    float jitterY = (Hash01(cellX, cellY, config.seed * 31 + 31) - 0.5f) * 0.5f;
+
+                    Vector2 position = new Vector2(
+                        (cellX + 0.5f + jitterX) * cellSize,
+                        (cellY + 0.5f + jitterY) * cellSize);
+
+                    if ((position - config.obstacleClearCenter).sqrMagnitude
+                        < config.propClearRadius * config.propClearRadius)
+                        continue;
+
+                    output.Add(new PropSpawn
+                    {
+                        Position = position,
+                        PropIndex = propIndex,
+                        FlipX = Hash01(cellX, cellY, config.seed * 31 + 41 + propIndex) > 0.5f,
+                        Scale = 0.75f + Hash01(cellX, cellY, config.seed * 31 + 43 + propIndex) * 0.65f,
+                        Tilt = (Hash01(cellX, cellY, config.seed * 31 + 47 + propIndex) - 0.5f) * 22f
+                    });
+                    break;
+                }
             }
         }
     }
@@ -121,11 +197,12 @@ public static class ChunkGenerator
     {
         unchecked
         {
-            uint hash = (uint)salt;
-            hash = (hash ^ 0x9e3779b9u) + (uint)a * 0x85ebca6bu;
-            hash = (hash ^ (hash >> 13)) + (uint)b * 0xc2b2ae35u;
-            hash = (hash ^ (hash >> 16)) + (uint)salt * 0x27d4eb2fu;
-            hash ^= hash >> 15;
+            // Murmur-style finalizer: well-distributed even for tiny
+            // coordinate deltas, unlike the previous weak mix.
+            uint hash = (uint)(a * 374761393 + b * 668265263 + salt * 1274126177);
+            hash ^= hash >> 13;
+            hash *= 1274126177;
+            hash ^= hash >> 16;
             return (hash & 0x00ffffffu) / 16777216f;
         }
     }

@@ -1,5 +1,5 @@
 public interface IAttack
 {
-    void Initialize(IAttackSource source);
+    void Initialize(IAttackSource source, AttackInstance attack);
     void Tick();
 }

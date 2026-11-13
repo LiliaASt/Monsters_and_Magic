@@ -8,7 +8,7 @@ public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private HeroActor hero;
     [SerializeField] private Camera gameplayCamera;
-    [SerializeField] private float spawnMargin = 1.5f;
+    [SerializeField] private float spawnMargin = 3f;
     [SerializeField] private float portalMinDistance = 2.5f;
 
     private readonly List<EnemyActor> alive = new();
@@ -130,11 +130,37 @@ public class EnemySpawner : MonoBehaviour
 
         switch (Random.Range(0, 4))
         {
-            case 0: return new Vector2(min.x - margin, y);
-            case 1: return new Vector2(max.x + margin, y);
-            case 2: return new Vector2(x, min.y - margin);
-            default: return new Vector2(x, max.y + margin);
+            case 0: return PushOffscreen(new Vector2(min.x - margin, y));
+            case 1: return PushOffscreen(new Vector2(max.x + margin, y));
+            case 2: return PushOffscreen(new Vector2(x, min.y - margin));
+            default: return PushOffscreen(new Vector2(x, max.y + margin));
         }
+    }
+
+    /// <summary>
+    /// Guarantees the spawn point is outside the visible viewport: with the
+    /// tilted camera and the smooth follow the plain margin occasionally let
+    /// enemies pop inside the screen.
+    /// </summary>
+    private Vector2 PushOffscreen(Vector2 position)
+    {
+        Vector3 viewport = gameplayCamera.WorldToViewportPoint(position);
+
+        if (viewport.x > -0.05f && viewport.x < 1.05f
+            && viewport.y > -0.05f && viewport.y < 1.05f)
+        {
+            float dx = viewport.x < 0.5f ? -viewport.x : 1f - viewport.x;
+            float dy = viewport.y < 0.5f ? -viewport.y : 1f - viewport.y;
+
+            if (dx < dy)
+                position.x += (viewport.x < 0.5f ? -1f : 1f) * (dx + 0.15f)
+                    * (gameplayCamera.orthographicSize * gameplayCamera.aspect * 2f);
+            else
+                position.y += (viewport.y < 0.5f ? -1f : 1f) * (dy + 0.15f)
+                    * (gameplayCamera.orthographicSize * 2f);
+        }
+
+        return position;
     }
 
     private Vector2 GetPortalPosition(float spread)

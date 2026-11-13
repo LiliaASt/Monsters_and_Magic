@@ -35,3 +35,11 @@ public class SurviveGoal : StageGoal
         return elapsed >= duration;
     }
 }
+
+public class WaveGoal : StageGoal
+{
+    public override bool Reached(float elapsed, int kills)
+    {
+        return false;
+    }
+}
